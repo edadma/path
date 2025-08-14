@@ -1,70 +1,269 @@
-# module-name  
+# Path - Cross-Platform File System Operations for Scala
 
-**Badges** 
+A clean, modern file system library for Scala that works consistently across JVM, Scala.js, and Scala Native.
 
-Optional badges such as npm version, test and build coverage, and so on.
+## Why Path?
 
-**Summary** 
+Java's file operations are verbose and clunky:
+```scala
+// Java way - verbose and error-prone
+val configPath = Paths.get("config").resolve("app.conf")
+if (Files.exists(configPath)) {
+  val content = new String(Files.readAllBytes(configPath), StandardCharsets.UTF_8)
+}
 
-One- or two-sentence description of what the module does.
+// Path way - clean and fluent
+val configPath = Path("config") / "app.conf"
+if (configPath.exists()) {
+  val content = configPath.readText()
+}
+```
 
-## Overview
+**Path gives you:**
+- **Fluent API**: Chain operations naturally with `/`
+- **Cross-platform**: Same code works on JVM, JS, and Native
+- **Method-based**: File operations as methods, not static functions
+- **Glob support**: Built-in pattern matching for file listing
+- **Type safety**: Case class benefits (equality, hashing, pattern matching)
 
-Optionally, include a section of one or two paragraphs with more high-level 
-information on what the module does, what problems it solves, why one would 
-use it and how.  Don't just repeat what's in the summary.
+## Quick Start
+
+```scala
+import io.github.edadma.path._
+
+// Create paths naturally
+val projectDir = Path("src") / "main" / "scala"
+val configFile = Path("/etc") / "myapp" / "config.json"
+
+// File operations as methods (the way it should be!)
+if (configFile.exists()) {
+  val config = configFile.readText()
+  println(s"Config: $config")
+}
+
+// Create directory structure
+val buildDir = Path("target") / "classes"
+buildDir.createDirectories()
+
+// List files with patterns
+val scalaFiles = projectDir.listDirectory("*.scala")
+scalaFiles.foreach { entry =>
+  println(s"Found: ${entry.name}")
+}
+
+// Relative path operations
+val relative = configFile.relativeTo(Path("/etc"))
+println(relative)  // myapp/config.json
+```
+
+## Core Features
+
+### Path Operations
+```scala
+// Path construction and combination
+val base = Path("/home/user")
+val docs = base / "documents" / "projects"
+
+// Relative paths between locations
+val targetDir = Path("/home/user/projects/myapp/target")
+val relative = targetDir.relativeTo(base)  // projects/myapp/target
+
+// Path normalization
+val messy = Path("src/../config/./app.conf")
+val clean = messy.normalize  // config/app.conf
+
+// Parent and filename
+val file = Path("/home/user/document.pdf")
+println(file.parent)    // Some(/home/user)
+println(file.filename)  // document.pdf
+```
+
+### File Operations
+```scala
+val file = Path("data.txt")
+
+// Text files
+file.writeText("Hello, World!")
+val content = file.readText()
+
+// Binary files  
+val data = Array[Byte](1, 2, 3, 4)
+file.writeBytes(data)
+val bytes = file.readBytes()
+
+// File metadata
+println(s"Size: ${file.size()} bytes")
+println(s"Modified: ${file.lastModified()}")
+println(s"Exists: ${file.exists()}")
+println(s"Is file: ${file.isFile()}")
+```
+
+### Directory Operations
+```scala
+val dir = Path("build")
+
+// Create directories
+dir.createDirectories()  // Creates parents too
+
+// List contents with filtering
+val allFiles = dir.listDirectory()
+val jsonFiles = dir.listDirectory("*.json")
+val appFiles = dir.listDirectory("app*")
+
+allFiles.foreach { entry =>
+  val typeStr = entry.fileType match {
+    case FileType.File => "FILE"
+    case FileType.Directory => "DIR"
+    case FileType.SymbolicLink => "LINK"
+    case FileType.Other => "OTHER"
+  }
+  println(s"$typeStr: ${entry.name}")
+}
+```
+
+### File Management
+```scala
+val source = Path("document.pdf")
+val backup = Path("backup") / "document.pdf"
+val archive = Path("archive") / "document.pdf"
+
+// Copy and move operations
+source.copyTo(backup)    // Copy to backup location
+source.moveTo(archive)   // Move to archive
+
+// Cleanup
+backup.delete()
+```
+
+## Perfect for Package Managers
+
+Path was designed with package management in mind:
+
+```scala
+// Package installation structure
+val packagesDir = Path("packages")
+val myPackage = packagesDir / "lodash" / "4.17.21"
+val binDir = myPackage / "bin"
+
+// Create package structure
+binDir.createDirectories()
+
+// Install package files
+val packageJson = myPackage / "package.json"
+packageJson.writeText("""{"name": "lodash", "version": "4.17.21"}""")
+
+// Find all JavaScript files
+val jsFiles = myPackage.listDirectory("*.js")
+
+// Resolve dependencies between packages
+val utilsPackage = packagesDir / "utils" / "1.0.0"
+val relativePath = utilsPackage.relativeTo(myPackage)
+// Result: ../../utils/1.0.0
+```
+
+## Cross-Platform Architecture
+
+Path provides a unified API while using the best platform-specific implementations:
+
+- **JVM**: Uses `java.nio.files` for robust, high-performance file operations
+- **Scala.js**: Will use Node.js `fs` and `path` modules (coming soon)
+- **Scala Native**: Will use direct system calls (coming soon)
+
+The same `Path` code compiles and runs identically across all platforms.
 
 ## Installation
 
+Add to your `build.sbt`:
+
+```scala
+libraryDependencies += "io.github.edadma" %% "path" % "0.1.0"
 ```
-$ npm install module-name
+
+For cross-platform projects:
+```scala
+// shared/src/main/scala - your cross-platform code using Path
+// jvm/src/main/scala    - JVM-specific implementations  
+// js/src/main/scala     - JS-specific implementations (coming soon)
+// native/src/main/scala - Native-specific implementations (coming soon)
 ```
-
-## Basic use
-
-General description of how to use the module with basic example.
-
-## API 
-
-Full API documentation.
 
 ## Examples
 
-Additional examples here.
+### Configuration Management
+```scala
+val configDir = Path(System.getProperty("user.home")) / ".myapp"
+configDir.createDirectories()
 
-## Tests
+val configFile = configDir / "config.json"
+if (!configFile.exists()) {
+  configFile.writeText("""{"theme": "dark", "autoSave": true}""")
+}
 
-What tests are included and how to run them. 
+val config = configFile.readText()
+```
+
+### Build Tool Integration
+```scala
+val sourceDir = Path("src") / "main" / "scala"
+val targetDir = Path("target") / "classes"
+
+// Find all Scala source files
+val scalaFiles = sourceDir.listDirectory("*.scala")
+
+// Compile to target directory
+targetDir.createDirectories()
+scalaFiles.foreach { entry =>
+  val sourcePath = sourceDir / entry.name
+  println(s"Compiling: ${sourcePath}")
+  // ... compilation logic
+}
+```
+
+### Log File Management
+```scala
+val logDir = Path("logs")
+logDir.createDirectories()
+
+// Archive old logs
+val oldLogs = logDir.listDirectory("*.log")
+val archiveDir = logDir / "archive"
+archiveDir.createDirectories()
+
+oldLogs.foreach { entry =>
+  val logFile = logDir / entry.name
+  val archiveFile = archiveDir / entry.name
+  logFile.moveTo(archiveFile)
+}
+```
+
+## Testing
+
+Path includes comprehensive tests covering:
+- Path construction and manipulation
+- File and directory operations
+- Glob pattern matching
+- Package manager scenarios
+- Cross-platform compatibility
+
+Run tests with:
+```bash
+sbt test
+```
 
 ## Contributing
 
-This project welcomes contributions from the community. Contributions are
-accepted using GitHub pull requests; for more information, see 
-[GitHub documentation - Creating a pull request](https://help.github.com/articles/creating-a-pull-request/).
+This library was built to solve real-world file system challenges in Scala. Contributions are welcome!
 
-For a good pull request, we ask you provide the following:
-
-1. Include a clear description of your pull request in the description
-   with the basic "what" and "why"s for the request.
-2. The tests should pass as best as you can. GitHub will automatically run
-   the tests as well, to act as a safety net.
-3. The pull request should include tests for the change. A new feature should
-   have tests for the new feature and bug fixes should include a test that fails
-   without the corresponding code change and passes after they are applied.
-   The command `npm run test-cov` will generate a `coverage/` folder that
-   contains HTML pages of the code coverage, to better understand if everything
-   you're adding is being tested.
-4. If the pull request is a new feature, please include appropriate documentation 
-   in the `README.md` file as well.
-5. To help ensure that your code is similar in style to the existing code,
-   run the command `npm run lint` and fix any displayed issues.
-
-## Contributors
-
-Names of module "owners" (lead developers) and other developers who 
-have contributed.
+**Upcoming features:**
+- Scala.js implementation using Node.js APIs
+- Scala Native implementation using system calls
+- Streaming operations for large files
+- Watch APIs for file system monitoring
 
 ## License
 
-Link to the license, with a short description of what it is, 
-e.g. "MIT" or whatever.
+MIT License - see LICENSE file for details.
+
+---
+
+*Finally, a file system library that doesn't make you hate working with files in Scala.*a
