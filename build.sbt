@@ -5,7 +5,7 @@ ThisBuild / scalaVersion           := "3.7.2"
 ThisBuild / organization           := "io.github.edadma"
 ThisBuild / organizationName       := "edadma"
 ThisBuild / organizationHomepage   := Some(url("https://github.com/edadma"))
-ThisBuild / version                := "0.0.3"
+ThisBuild / version                := "0.0.4"
 ThisBuild / sonatypeCredentialHost := "central.sonatype.com"
 
 ThisBuild / publishConfiguration := publishConfiguration.value.withOverwrite(true).withChecksums(Vector.empty)
@@ -54,10 +54,10 @@ lazy val path = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       ),
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.19" % "test",
     libraryDependencies ++= Seq(
-      "io.github.edadma" %%% "cross_platform" % "0.0.14",
+      "io.github.edadma" %%% "cross_platform" % "0.0.17",
     ),
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "pprint" % "0.9.0" % "test",
+      "com.lihaoyi" %%% "pprint" % "0.9.3" % "test",
     ),
     publishMavenStyle      := true,
     Test / publishArtifact := false,
