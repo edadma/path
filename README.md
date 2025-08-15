@@ -1,5 +1,12 @@
 # Path - Cross-Platform File System Operations for Scala
 
+![Maven Central](https://img.shields.io/maven-central/v/io.github.edadma/path_sjs1_3)
+[![Last Commit](https://img.shields.io/github/last-commit/edadma/path)](https://github.com/edadma/path/commits)
+![GitHub](https://img.shields.io/github/license/edadma/path)
+![Scala Version](https://img.shields.io/badge/Scala-3.7.2-blue.svg)
+![ScalaJS Version](https://img.shields.io/badge/Scala.js-1.19.0-blue.svg)
+![Scala Native Version](https://img.shields.io/badge/Scala_Native-0.5.8-blue.svg)
+
 A clean, modern file system library for Scala that works consistently across JVM, Scala.js, and Scala Native.
 
 ## Why Path?
