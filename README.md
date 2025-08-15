@@ -30,6 +30,8 @@ if (configPath.exists()) {
 - **Fluent API**: Chain operations naturally with `/`
 - **Cross-platform**: Same code works on JVM, JS, and Native
 - **Method-based**: File operations as methods, not static functions
+- **Rich path manipulation**: Extensions, subpaths, absolute conversion
+- **Complete metadata**: Permissions, file types, comparisons
 - **Glob support**: Built-in pattern matching for file listing
 - **Type safety**: Case class benefits (equality, hashing, pattern matching)
 
@@ -48,6 +50,16 @@ if (configFile.exists()) {
   println(s"Config: $config")
 }
 
+// Rich path manipulation
+val scalaFile = Path("MyClass.scala")
+println(s"Extension: ${scalaFile.extension}")           // .scala
+println(s"Name: ${scalaFile.nameWithoutExtension}")     // MyClass
+val javaFile = scalaFile.withExtension("java")          // MyClass.java
+
+// Convert to absolute paths
+val absolutePath = projectDir.toAbsolutePath()
+println(s"Absolute: $absolutePath")
+
 // Create directory structure
 val buildDir = Path("target") / "classes"
 buildDir.createDirectories()
@@ -58,18 +70,36 @@ scalaFiles.foreach { entry =>
   println(s"Found: ${entry.name}")
 }
 
-// Relative path operations
-val relative = configFile.relativeTo(Path("/etc"))
-println(relative)  // myapp/config.json
+// Check file permissions and metadata
+if (configFile.isReadable() && !configFile.isEmpty()) {
+  println("Config file is readable and not empty")
+}
 ```
 
 ## Core Features
 
-### Path Operations
+### Path Construction and Manipulation
 ```scala
 // Path construction and combination
 val base = Path("/home/user")
 val docs = base / "documents" / "projects"
+
+// Rich path manipulation
+val sourceFile = Path("/projects/myapp/src/main/scala/MyClass.scala")
+
+// File extensions
+println(sourceFile.extension)              // .scala
+println(sourceFile.nameWithoutExtension)   // MyClass
+val testFile = sourceFile.withExtension("test.scala")  // MyClass.test.scala
+
+// Path segments and subpaths
+println(sourceFile.subpath(2, 5))          // src/main/scala
+println(sourceFile.startsWith(Path("/projects")))  // true
+println(sourceFile.endsWith(Path("MyClass.scala"))) // true
+
+// Convert relative to absolute
+val relPath = Path("src/main/scala")
+val absPath = relPath.toAbsolutePath()     // /current/working/dir/src/main/scala
 
 // Relative paths between locations
 val targetDir = Path("/home/user/projects/myapp/target")
@@ -77,12 +107,39 @@ val relative = targetDir.relativeTo(base)  // projects/myapp/target
 
 // Path normalization
 val messy = Path("src/../config/./app.conf")
-val clean = messy.normalize  // config/app.conf
+val clean = messy.normalize                 // config/app.conf
 
 // Parent and filename
 val file = Path("/home/user/document.pdf")
 println(file.parent)    // Some(/home/user)
 println(file.filename)  // document.pdf
+```
+
+### File System Metadata
+```scala
+val file = Path("important-document.pdf")
+
+// Existence and type checking
+println(s"Exists: ${file.exists()}")
+println(s"Is file: ${file.isFile()}")
+println(s"Is directory: ${file.isDirectory()}")
+println(s"Is symbolic link: ${file.isSymbolicLink()}")
+
+// Permission checking
+println(s"Readable: ${file.isReadable()}")
+println(s"Writable: ${file.isWritable()}")
+println(s"Executable: ${file.isExecutable()}")
+
+// File properties
+println(s"Size: ${file.size()} bytes")
+println(s"Modified: ${file.lastModified()}")
+println(s"Empty: ${file.isEmpty()}")
+
+// Compare files
+val backup = Path("document-backup.pdf")
+if (file.isSameFile(backup)) {
+  println("Files are identical (same inode/reference)")
+}
 ```
 
 ### File Operations
@@ -98,11 +155,10 @@ val data = Array[Byte](1, 2, 3, 4)
 file.writeBytes(data)
 val bytes = file.readBytes()
 
-// File metadata
-println(s"Size: ${file.size()} bytes")
-println(s"Modified: ${file.lastModified()}")
-println(s"Exists: ${file.exists()}")
-println(s"Is file: ${file.isFile()}")
+// Check if file/directory is empty
+if (file.isEmpty()) {
+  println("File has no content")
+}
 ```
 
 ### Directory Operations
@@ -126,6 +182,11 @@ allFiles.foreach { entry =>
   }
   println(s"$typeStr: ${entry.name}")
 }
+
+// Check if directory is empty
+if (dir.isEmpty()) {
+  println("Directory contains no files")
+}
 ```
 
 ### File Management
@@ -142,30 +203,83 @@ source.moveTo(archive)   // Move to archive
 backup.delete()
 ```
 
-## Perfect for Package Managers
+## Advanced Path Operations
 
-Path was designed with package management in mind:
-
+### Working with Extensions
 ```scala
-// Package installation structure
-val packagesDir = Path("packages")
-val myPackage = packagesDir / "lodash" / "4.17.21"
-val binDir = myPackage / "bin"
+// Handle various file types
+val files = Vector(
+  Path("README.md"),
+  Path("app.conf"),
+  Path("data.json"),
+  Path("script.sh"),
+  Path("archive.tar.gz")
+)
 
-// Create package structure
-binDir.createDirectories()
+files.foreach { file =>
+  println(s"File: ${file.filename}")
+  println(s"  Extension: '${file.extension}'")
+  println(s"  Without ext: '${file.nameWithoutExtension}'")
+  println(s"  As backup: ${file.withExtension(file.extension + ".bak")}")
+  println()
+}
+```
 
-// Install package files
-val packageJson = myPackage / "package.json"
-packageJson.writeText("""{"name": "lodash", "version": "4.17.21"}""")
+### Path Hierarchy Navigation
+```scala
+val projectRoot = Path("/projects/myapp")
+val sourceDir = projectRoot / "src" / "main" / "scala"
+val testDir = projectRoot / "src" / "test" / "scala"
 
-// Find all JavaScript files
-val jsFiles = myPackage.listDirectory("*.js")
+// Check relationships
+println(sourceDir.startsWith(projectRoot))  // true
+println(sourceDir.endsWith(Path("scala")))  // true
 
-// Resolve dependencies between packages
-val utilsPackage = packagesDir / "utils" / "1.0.0"
-val relativePath = utilsPackage.relativeTo(myPackage)
-// Result: ../../utils/1.0.0
+// Get relative paths between directories
+val relativeToTest = sourceDir.relativeTo(testDir)
+println(relativeToTest)  // ../../main/scala
+
+// Extract specific path segments
+val pathSegments = sourceDir.subpath(1, 4)  // projects/myapp/src
+```
+
+### File System Analysis
+```scala
+def analyzeDirectory(dir: Path): Unit = {
+  if (!dir.exists() || !dir.isDirectory()) {
+    println(s"$dir is not a valid directory")
+    return
+  }
+  
+  val entries = dir.listDirectory()
+  val (files, dirs, links) = entries.partition(_.fileType).fold(
+    (Vector.empty, Vector.empty, Vector.empty)
+  ) { case ((f, d, l), entry) =>
+    entry.fileType match {
+      case FileType.File => (f :+ entry, d, l)
+      case FileType.Directory => (f, d :+ entry, l)
+      case FileType.SymbolicLink => (f, d, l :+ entry)
+      case FileType.Other => (f, d, l)
+    }
+  }
+  
+  println(s"Analysis of $dir:")
+  println(s"  Files: ${files.length}")
+  println(s"  Directories: ${dirs.length}")
+  println(s"  Symbolic links: ${links.length}")
+  println(s"  Empty: ${dir.isEmpty()}")
+  
+  // Find largest files
+  val fileSizes = files.map { entry =>
+    val filePath = dir / entry.name
+    (entry.name, filePath.size())
+  }.sortBy(-_._2)
+  
+  println("  Largest files:")
+  fileSizes.take(3).foreach { case (name, size) =>
+    println(s"    $name: $size bytes")
+  }
+}
 ```
 
 ## Cross-Platform Architecture
@@ -173,8 +287,8 @@ val relativePath = utilsPackage.relativeTo(myPackage)
 Path provides a unified API while using the best platform-specific implementations:
 
 - **JVM**: Uses `java.nio.files` for robust, high-performance file operations
-- **Scala.js**: Will use Node.js `fs` and `path` modules (coming soon)
-- **Scala Native**: Will use direct system calls (coming soon)
+- **Scala.js**: Uses Node.js `fs` and `path` modules for full file system access
+- **Scala Native**: Uses Java NIO compatibility layer for native performance
 
 The same `Path` code compiles and runs identically across all platforms.
 
@@ -183,15 +297,15 @@ The same `Path` code compiles and runs identically across all platforms.
 Add to your `build.sbt`:
 
 ```scala
-libraryDependencies += "io.github.edadma" %% "path" % "0.1.0"
+libraryDependencies += "io.github.edadma" %% "path" % "0.0.2"
 ```
 
 For cross-platform projects:
 ```scala
 // shared/src/main/scala - your cross-platform code using Path
 // jvm/src/main/scala    - JVM-specific implementations  
-// js/src/main/scala     - JS-specific implementations (coming soon)
-// native/src/main/scala - Native-specific implementations (coming soon)
+// js/src/main/scala     - JS-specific implementations
+// native/src/main/scala - Native-specific implementations
 ```
 
 ## Examples
@@ -206,7 +320,11 @@ if (!configFile.exists()) {
   configFile.writeText("""{"theme": "dark", "autoSave": true}""")
 }
 
-val config = configFile.readText()
+// Validate config file
+if (configFile.isReadable() && !configFile.isEmpty()) {
+  val config = configFile.readText()
+  println(s"Loaded config: ${config.length} characters")
+}
 ```
 
 ### Build Tool Integration
@@ -216,14 +334,20 @@ val targetDir = Path("target") / "classes"
 
 // Find all Scala source files
 val scalaFiles = sourceDir.listDirectory("*.scala")
+println(s"Found ${scalaFiles.length} Scala files")
+
+// Analyze source files
+scalaFiles.foreach { entry =>
+  val sourcePath = sourceDir / entry.name
+  println(s"${sourcePath.filename}: ${sourcePath.size()} bytes")
+  
+  // Convert to target path
+  val targetPath = targetDir / sourcePath.nameWithoutExtension.withExtension("class")
+  println(s"  → ${targetPath}")
+}
 
 // Compile to target directory
 targetDir.createDirectories()
-scalaFiles.foreach { entry =>
-  val sourcePath = sourceDir / entry.name
-  println(s"Compiling: ${sourcePath}")
-  // ... compilation logic
-}
 ```
 
 ### Log File Management
@@ -231,16 +355,71 @@ scalaFiles.foreach { entry =>
 val logDir = Path("logs")
 logDir.createDirectories()
 
-// Archive old logs
-val oldLogs = logDir.listDirectory("*.log")
+// Find and archive old logs
+val logFiles = logDir.listDirectory("*.log")
 val archiveDir = logDir / "archive"
-archiveDir.createDirectories()
 
-oldLogs.foreach { entry =>
-  val logFile = logDir / entry.name
-  val archiveFile = archiveDir / entry.name
-  logFile.moveTo(archiveFile)
+if (logFiles.nonEmpty) {
+  archiveDir.createDirectories()
+  
+  logFiles.foreach { entry =>
+    val logFile = logDir / entry.name
+    
+    // Check if log file should be archived (e.g., older than 30 days)
+    val ageMs = System.currentTimeMillis() - logFile.lastModified()
+    val ageDays = ageMs / (1000 * 60 * 60 * 24)
+    
+    if (ageDays > 30) {
+      val archiveFile = archiveDir / entry.name
+      println(s"Archiving ${logFile.filename} (${ageDays} days old)")
+      logFile.moveTo(archiveFile)
+    }
+  }
 }
+
+// Clean up empty directories
+if (logDir.isEmpty()) {
+  println("Log directory is empty")
+}
+```
+
+### File System Utilities
+```scala
+def findLargestFiles(dir: Path, count: Int = 10): Vector[(Path, Long)] = {
+  if (!dir.exists() || !dir.isDirectory()) {
+    return Vector.empty
+  }
+  
+  val allFiles = dir.listDirectory()
+    .filter(_.fileType == FileType.File)
+    .map(entry => dir / entry.name)
+    .filter(_.isReadable())
+  
+  allFiles
+    .map(file => (file, file.size()))
+    .sortBy(-_._2)
+    .take(count)
+}
+
+def findFilesByExtension(dir: Path, extension: String): Vector[Path] = {
+  val pattern = if (extension.startsWith(".")) s"*$extension" else s"*.$extension"
+  
+  dir.listDirectory(pattern)
+    .map(entry => dir / entry.name)
+    .filter(_.isFile())
+}
+
+// Usage
+val projectDir = Path(".")
+val largestFiles = findLargestFiles(projectDir)
+val scalaFiles = findFilesByExtension(projectDir, ".scala")
+
+println("Largest files:")
+largestFiles.foreach { case (file, size) =>
+  println(s"  ${file.filename}: $size bytes")
+}
+
+println(s"\nFound ${scalaFiles.length} Scala files")
 ```
 
 ## Testing
@@ -248,9 +427,10 @@ oldLogs.foreach { entry =>
 Path includes comprehensive tests covering:
 - Path construction and manipulation
 - File and directory operations
-- Glob pattern matching
-- Package manager scenarios
+- Extension handling and path conversion
+- Permission and metadata checking
 - Cross-platform compatibility
+- Package manager scenarios
 
 Run tests with:
 ```bash
@@ -262,14 +442,14 @@ sbt test
 This library was built to solve real-world file system challenges in Scala. Contributions are welcome!
 
 **Upcoming features:**
-- Scala.js implementation using Node.js APIs
-- Scala Native implementation using system calls
-- Streaming operations for large files
 - Watch APIs for file system monitoring
+- Streaming operations for large files
+- Advanced glob patterns with recursion
+- File system event notifications
 
 ## License
 
-MIT License - see LICENSE file for details.
+ISC License - see LICENSE file for details.
 
 ---
 
