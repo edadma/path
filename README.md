@@ -1,4 +1,4 @@
-# Path - Cross-Platform File System Operations for Scala
+# Path
 
 ![Maven Central](https://img.shields.io/maven-central/v/io.github.edadma/path_sjs1_3)
 [![Last Commit](https://img.shields.io/github/last-commit/edadma/path)](https://github.com/edadma/path/commits)
