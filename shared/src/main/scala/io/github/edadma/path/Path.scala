@@ -1,18 +1,12 @@
 package io.github.edadma.path
 
-sealed trait FileType
-object FileType {
-  case object File         extends FileType
-  case object Directory    extends FileType
-  case object SymbolicLink extends FileType
-  case object Other        extends FileType
-}
-
-case class DirectoryEntry(name: String, fileType: FileType)
+import io.github.edadma.cross_platform
+import io.github.edadma.cross_platform.{DirectoryEntry, FileType, nameSeparator}
 
 case class Path(segments: Vector[String], isAbsolute: Boolean) {
 
-  // Path operations (platform-independent)
+  // ===== PATH OPERATIONS (Pure - no I/O) =====
+
   def /(other: String): Path =
     Path(segments :+ other, isAbsolute)
 
@@ -50,29 +44,60 @@ case class Path(segments: Vector[String], isAbsolute: Boolean) {
     Path(normalized, isAbsolute)
   }
 
-  // File operations (delegate to platform implementation)
-  def exists(): Boolean      = PlatformFileSystem.exists(this)
-  def isFile(): Boolean      = PlatformFileSystem.isFile(this)
-  def isDirectory(): Boolean = PlatformFileSystem.isDirectory(this)
+  // ===== FILE OPERATIONS (Delegate to cross-platform library) =====
 
-  def readText(charset: String = "UTF-8"): String                 = PlatformFileSystem.readText(this, charset)
-  def writeText(content: String, charset: String = "UTF-8"): Unit = PlatformFileSystem.writeText(this, content, charset)
-  def readBytes(): Array[Byte]                                    = PlatformFileSystem.readBytes(this)
-  def writeBytes(data: Array[Byte]): Unit                         = PlatformFileSystem.writeBytes(this, data)
+  def exists(): Boolean      = cross_platform.exists(toPlatformString)
+  def isFile(): Boolean      = cross_platform.isFile(toPlatformString)
+  def isDirectory(): Boolean = cross_platform.isDirectory(toPlatformString)
 
-  def listDirectory(pattern: String = "*"): Vector[DirectoryEntry] = PlatformFileSystem.listDirectory(this, pattern)
-  def createDirectory(): Unit                                      = PlatformFileSystem.createDirectory(this)
-  def createDirectories(): Unit                                    = PlatformFileSystem.createDirectories(this)
+  def readText(charset: String = "UTF-8"): String                 = cross_platform.readFile(toPlatformString)
+  def writeText(content: String, charset: String = "UTF-8"): Unit = cross_platform.writeFile(toPlatformString, content)
+  def readBytes(): Array[Byte]                                    = cross_platform.readBytes(toPlatformString)
+  def writeBytes(data: Array[Byte]): Unit                         = cross_platform.writeBytes(toPlatformString, data)
 
-  def delete(): Unit             = PlatformFileSystem.delete(this)
-  def copyTo(target: Path): Unit = PlatformFileSystem.copyTo(this, target)
-  def moveTo(target: Path): Unit = PlatformFileSystem.moveTo(this, target)
+  def listDirectory(pattern: String = "*"): Vector[DirectoryEntry] = {
+    val entries = cross_platform.listDirectoryWithTypes(toPlatformString)
+    if (pattern == "*") {
+      entries
+    } else {
+      val regex = globToRegex(pattern)
+      entries.filter(entry => entry.name.matches(regex))
+    }
+  }
 
-  def size(): Long         = PlatformFileSystem.size(this)
-  def lastModified(): Long = PlatformFileSystem.lastModified(this)
+  def createDirectory(): Unit   = cross_platform.createDirectory(toPlatformString)
+  def createDirectories(): Unit = cross_platform.createDirectories(toPlatformString)
 
-  // Convert to platform-specific path string
-  def toPlatformString: String = PlatformFileSystem.toPlatformString(this)
+  def delete(): Unit             = cross_platform.deleteFile(toPlatformString)
+  def copyTo(target: Path): Unit = cross_platform.copyFile(toPlatformString, target.toPlatformString)
+  def moveTo(target: Path): Unit = cross_platform.moveFile(toPlatformString, target.toPlatformString)
+
+  def size(): Long         = cross_platform.fileSize(toPlatformString)
+  def lastModified(): Long = cross_platform.lastModified(toPlatformString)
+
+  // ===== INTERNAL HELPERS =====
+
+  def toPlatformString: String = {
+    val pathStr = segments.mkString(nameSeparator)
+    if (isAbsolute) {
+      if (segments.nonEmpty && segments.head.matches("[A-Za-z]:")) {
+        // Windows drive letter
+        pathStr
+      } else {
+        // Unix-like absolute path
+        nameSeparator + pathStr
+      }
+    } else {
+      pathStr
+    }
+  }
+
+  private def globToRegex(pattern: String): String = {
+    pattern
+      .replace(".", "\\.")
+      .replace("*", ".*")
+      .replace("?", ".")
+  }
 
   override def toString: String = {
     val pathStr = segments.mkString("/")
@@ -89,22 +114,100 @@ object Path {
   }
 }
 
-// Platform abstraction
-trait FileSystemOps {
-  def exists(path: Path): Boolean
-  def isFile(path: Path): Boolean
-  def isDirectory(path: Path): Boolean
-  def readText(path: Path, charset: String): String
-  def writeText(path: Path, content: String, charset: String): Unit
-  def readBytes(path: Path): Array[Byte]
-  def writeBytes(path: Path, data: Array[Byte]): Unit
-  def listDirectory(path: Path, pattern: String): Vector[DirectoryEntry]
-  def createDirectory(path: Path): Unit
-  def createDirectories(path: Path): Unit
-  def delete(path: Path): Unit
-  def copyTo(source: Path, target: Path): Unit
-  def moveTo(source: Path, target: Path): Unit
-  def size(path: Path): Long
-  def lastModified(path: Path): Long
-  def toPlatformString(path: Path): String
+// Test Application
+object PathTest extends App {
+  println("=== Pure Path Library Test ===\n")
+
+  // Test path operations
+  println("--- Path Operations ---")
+  val root       = Path("/")
+  val home       = Path("/home")
+  val userDir    = home / "user" / "documents"
+  val configFile = userDir / "config.txt"
+
+  println(s"Root: $root")
+  println(s"Home: $home")
+  println(s"User dir: $userDir")
+  println(s"Config file: $configFile")
+  println(s"Config parent: ${configFile.parent}")
+  println(s"Config filename: ${configFile.filename}")
+
+  // Test relative paths
+  val relPath = Path("src") / "main" / "scala"
+  println(s"Relative path: $relPath")
+  println(s"Is absolute: ${userDir.isAbsolute}, ${relPath.isAbsolute}")
+
+  // Test the new relativeTo operation
+  val base     = Path("/home/user")
+  val target   = Path("/home/user/documents/config.txt")
+  val relative = target.relativeTo(base)
+  println(s"$target relative to $base = $relative")
+
+  // Test path normalization
+  val messyPath = Path("src/../config/./app/../settings.conf")
+  println(s"Messy path: $messyPath")
+  println(s"Normalized: ${messyPath.normalize}")
+
+  println("\n--- File Operations ---")
+
+  // Test with current directory
+  val currentDir = Path(".")
+  println(s"Current directory exists: ${currentDir.exists()}")
+  println(s"Is directory: ${currentDir.isDirectory()}")
+
+  if (currentDir.exists() && currentDir.isDirectory()) {
+    println("\nFiles in current directory:")
+    val entries = currentDir.listDirectory()
+    entries.take(10).foreach { entry =>
+      val typeStr = entry.fileType match {
+        case FileType.File         => "FILE"
+        case FileType.Directory    => "DIR "
+        case FileType.SymbolicLink => "LINK"
+        case FileType.Other        => "OTHER"
+      }
+      println(s"  $typeStr: ${entry.name}")
+    }
+
+    if (entries.length > 10) {
+      println(s"  ... and ${entries.length - 10} more")
+    }
+
+    // Test pattern matching
+    val scalaFiles = currentDir.listDirectory("*.scala")
+    if (scalaFiles.nonEmpty) {
+      println(s"\nScala files (*.scala): ${scalaFiles.map(_.name).mkString(", ")}")
+    }
+  }
+
+  // Test file creation and manipulation
+  println("\n--- File Creation Test ---")
+  val testFile = Path("test-file.txt")
+
+  try {
+    // Create a test file
+    testFile.writeText("Hello, Path!\nThis is a test file.")
+    println(s"Created test file: $testFile")
+    println(s"File exists: ${testFile.exists()}")
+    println(s"File size: ${testFile.size()} bytes")
+    println(s"Is file: ${testFile.isFile()}")
+
+    // Read it back
+    val content = testFile.readText()
+    println(s"File content:\n$content")
+
+    // Clean up
+    testFile.delete()
+    println(s"Deleted test file. Exists: ${testFile.exists()}")
+
+  } catch {
+    case e: Exception =>
+      println(s"Error during file test: ${e.getMessage}")
+      // Try to clean up if file was created
+      if (testFile.exists()) {
+        try testFile.delete()
+        catch { case _: Exception => }
+      }
+  }
+
+  println("\n=== Test Complete ===")
 }

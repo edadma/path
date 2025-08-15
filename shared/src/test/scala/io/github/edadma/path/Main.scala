@@ -1,5 +1,7 @@
 package io.github.edadma.path
 
+import io.github.edadma.cross_platform.FileType
+
 @main def run(args: String*): Unit =
   println("=== Path Cross-Platform FileSystem Test ===\n")
 

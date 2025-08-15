@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.BeforeAndAfterEach
 import scala.util.Random
 import scala.compiletime.uninitialized
+import io.github.edadma.cross_platform.{FileType, DirectoryEntry}
 
 class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
 
@@ -224,7 +225,7 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
     tempDir.listDirectory("*.conf").map(_.name) shouldBe Vector("app.conf")
     tempDir.listDirectory("app.*").map(_.name).toSet shouldBe Set("app.conf", "app.log")
     tempDir.listDirectory("*.txt").map(_.name) shouldBe Vector("data.txt")
-    tempDir.listDirectory() should have size 4 // All files
+    tempDir.listDirectory("*") should have size 4 // All files
   }
 
   "File operations" should "copy files correctly" in {
