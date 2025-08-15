@@ -35,6 +35,51 @@ case class Path(segments: Vector[String], isAbsolute: Boolean) {
 
   def filename: String = segments.lastOption.getOrElse("")
 
+  def extension: String = {
+    val name     = filename
+    val dotIndex = name.lastIndexOf('.')
+    if (dotIndex > 0 && dotIndex < name.length - 1) name.substring(dotIndex)
+    else ""
+  }
+
+  def nameWithoutExtension: String = {
+    val name     = filename
+    val dotIndex = name.lastIndexOf('.')
+    if (dotIndex > 0) name.substring(0, dotIndex)
+    else name
+  }
+
+  def withExtension(ext: String): Path = {
+    val newExt  = if (ext.startsWith(".")) ext else "." + ext
+    val newName = nameWithoutExtension + newExt
+    parent.map(_ / newName).getOrElse(Path(newName))
+  }
+
+  def startsWith(other: Path): Boolean = {
+    if (isAbsolute != other.isAbsolute) false
+    else segments.startsWith(other.segments)
+  }
+
+  def endsWith(other: Path): Boolean = {
+    segments.endsWith(other.segments)
+  }
+
+  def subpath(start: Int, end: Int): Path = {
+    require(
+      start >= 0 && end <= segments.length && start <= end,
+      s"Invalid subpath range: start=$start, end=$end, segments.length=${segments.length}",
+    )
+    Path(segments.slice(start, end), isAbsolute = false)
+  }
+
+  def toAbsolutePath(): Path = {
+    if (isAbsolute) this
+    else {
+      val currentDir = Path(cross_platform.getCurrentDirectory)
+      currentDir / this
+    }
+  }
+
   def normalize: Path = {
     val normalized = segments.foldLeft(Vector.empty[String]) {
       case (acc, "..") if acc.nonEmpty && acc.last != ".." => acc.dropRight(1)
@@ -44,11 +89,28 @@ case class Path(segments: Vector[String], isAbsolute: Boolean) {
     Path(normalized, isAbsolute)
   }
 
-  // ===== FILE OPERATIONS (Delegate to cross-platform library) =====
+  // ===== FILE SYSTEM METADATA (I/O operations) =====
 
-  def exists(): Boolean      = cross_platform.exists(toPlatformString)
-  def isFile(): Boolean      = cross_platform.isFile(toPlatformString)
-  def isDirectory(): Boolean = cross_platform.isDirectory(toPlatformString)
+  def exists(): Boolean         = cross_platform.exists(toPlatformString)
+  def isFile(): Boolean         = cross_platform.isFile(toPlatformString)
+  def isDirectory(): Boolean    = cross_platform.isDirectory(toPlatformString)
+  def isSymbolicLink(): Boolean = cross_platform.isSymbolicLink(toPlatformString)
+  def isReadable(): Boolean     = cross_platform.isReadable(toPlatformString)
+  def isWritable(): Boolean     = cross_platform.isWritable(toPlatformString)
+  def isExecutable(): Boolean   = cross_platform.isExecutable(toPlatformString)
+
+  def size(): Long         = cross_platform.fileSize(toPlatformString)
+  def lastModified(): Long = cross_platform.lastModified(toPlatformString)
+
+  def isEmpty(): Boolean = {
+    if (!exists()) throw new IllegalArgumentException(s"Path does not exist: $this")
+    if (isDirectory()) listDirectory().isEmpty
+    else size() == 0
+  }
+
+  def isSameFile(other: Path): Boolean = cross_platform.isSameFile(toPlatformString, other.toPlatformString)
+
+  // ===== FILE OPERATIONS (Delegate to cross-platform library) =====
 
   def readText(charset: String = "UTF-8"): String                 = cross_platform.readFile(toPlatformString)
   def writeText(content: String, charset: String = "UTF-8"): Unit = cross_platform.writeFile(toPlatformString, content)
@@ -71,9 +133,6 @@ case class Path(segments: Vector[String], isAbsolute: Boolean) {
   def delete(): Unit             = cross_platform.deleteFile(toPlatformString)
   def copyTo(target: Path): Unit = cross_platform.copyFile(toPlatformString, target.toPlatformString)
   def moveTo(target: Path): Unit = cross_platform.moveFile(toPlatformString, target.toPlatformString)
-
-  def size(): Long         = cross_platform.fileSize(toPlatformString)
-  def lastModified(): Long = cross_platform.lastModified(toPlatformString)
 
   // ===== INTERNAL HELPERS =====
 
@@ -116,7 +175,7 @@ object Path {
 
 // Test Application
 object PathTest extends App {
-  println("=== Pure Path Library Test ===\n")
+  println("=== Enhanced Path Library Test ===\n")
 
   // Test path operations
   println("--- Path Operations ---")
@@ -131,6 +190,25 @@ object PathTest extends App {
   println(s"Config file: $configFile")
   println(s"Config parent: ${configFile.parent}")
   println(s"Config filename: ${configFile.filename}")
+
+  // Test new path manipulation methods
+  println(s"Config extension: '${configFile.extension}'")
+  println(s"Config name without extension: '${configFile.nameWithoutExtension}'")
+  println(s"Config with .json extension: ${configFile.withExtension("json")}")
+
+  val projectPath = Path("src/main/scala/MyApp.scala")
+  println(s"Project path: $projectPath")
+  println(s"Extension: '${projectPath.extension}'")
+  println(s"Name without extension: '${projectPath.nameWithoutExtension}'")
+
+  // Test startsWith/endsWith
+  val libPath = Path("lib/utils/helper.scala")
+  println(s"$libPath starts with 'lib': ${libPath.startsWith(Path("lib"))}")
+  println(s"$libPath ends with 'helper.scala': ${libPath.endsWith(Path("helper.scala"))}")
+
+  // Test subpath
+  val longPath = Path("a/b/c/d/e/f")
+  println(s"$longPath subpath(1,4): ${longPath.subpath(1, 4)}")
 
   // Test relative paths
   val relPath = Path("src") / "main" / "scala"
@@ -172,6 +250,15 @@ object PathTest extends App {
       println(s"  ... and ${entries.length - 10} more")
     }
 
+    // Test new metadata methods
+    println(s"\nCurrent directory metadata:")
+    println(s"  Readable: ${currentDir.isReadable()}")
+    println(s"  Writable: ${currentDir.isWritable()}")
+    println(s"  Executable: ${currentDir.isExecutable()}")
+    if (currentDir.isDirectory()) {
+      println(s"  Directory empty: ${currentDir.isEmpty()}")
+    }
+
     // Test pattern matching
     val scalaFiles = currentDir.listDirectory("*.scala")
     if (scalaFiles.nonEmpty) {
@@ -185,11 +272,17 @@ object PathTest extends App {
 
   try {
     // Create a test file
-    testFile.writeText("Hello, Path!\nThis is a test file.")
+    testFile.writeText("Hello, Enhanced Path!\nThis is a test file.")
     println(s"Created test file: $testFile")
     println(s"File exists: ${testFile.exists()}")
     println(s"File size: ${testFile.size()} bytes")
     println(s"Is file: ${testFile.isFile()}")
+    println(s"Is readable: ${testFile.isReadable()}")
+    println(s"Is writable: ${testFile.isWritable()}")
+    println(s"Is empty: ${testFile.isEmpty()}")
+
+    // Test absolute path conversion
+    println(s"Absolute path: ${testFile.toAbsolutePath()}")
 
     // Read it back
     val content = testFile.readText()
@@ -209,5 +302,5 @@ object PathTest extends App {
       }
   }
 
-  println("\n=== Test Complete ===")
+  println("\n=== Enhanced Test Complete ===")
 }

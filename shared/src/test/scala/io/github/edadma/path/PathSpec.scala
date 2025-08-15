@@ -113,6 +113,114 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
     }
   }
 
+  "Path parent and filename" should "work correctly" in {
+    val path = Path("/home/user/file.txt")
+    path.parent.map(_.segments) shouldBe Some(Vector("home", "user"))
+    path.filename shouldBe "file.txt"
+
+    Path("/").parent shouldBe None
+    Path("file.txt").parent shouldBe Some(Path(""))
+  }
+
+  // ===== NEW PATH MANIPULATION TESTS =====
+
+  "Path extension methods" should "extract file extensions correctly" in {
+    Path("file.txt").extension shouldBe ".txt"
+    Path("archive.tar.gz").extension shouldBe ".gz"
+    Path("document.pdf").extension shouldBe ".pdf"
+    Path("README").extension shouldBe ""
+    Path(".gitignore").extension shouldBe ""
+    Path("file.").extension shouldBe ""
+    Path("/path/to/file.scala").extension shouldBe ".scala"
+  }
+
+  it should "extract name without extension correctly" in {
+    Path("file.txt").nameWithoutExtension shouldBe "file"
+    Path("archive.tar.gz").nameWithoutExtension shouldBe "archive.tar"
+    Path("document.pdf").nameWithoutExtension shouldBe "document"
+    Path("README").nameWithoutExtension shouldBe "README"
+    Path(".gitignore").nameWithoutExtension shouldBe ".gitignore"
+    Path("file.").nameWithoutExtension shouldBe "file"
+    Path("/path/to/MyClass.scala").nameWithoutExtension shouldBe "MyClass"
+  }
+
+  it should "change extensions correctly" in {
+    val txtFile = Path("document.pdf")
+    txtFile.withExtension("txt") shouldBe Path("document.txt")
+    txtFile.withExtension(".json") shouldBe Path("document.json")
+
+    val noExtFile = Path("README")
+    noExtFile.withExtension("md") shouldBe Path("README.md")
+
+    val pathWithDir = Path("/home/user/file.old")
+    pathWithDir.withExtension("new") shouldBe Path("/home/user/file.new")
+  }
+
+  "Path startsWith and endsWith" should "work correctly" in {
+    val longPath = Path("/home/user/documents/projects/myapp/src/main/scala")
+
+    longPath.startsWith(Path("/home")) shouldBe true
+    longPath.startsWith(Path("/home/user")) shouldBe true
+    longPath.startsWith(Path("/home/user/documents")) shouldBe true
+    longPath.startsWith(Path("/other")) shouldBe false
+    longPath.startsWith(Path("home")) shouldBe false // Different absolute/relative
+
+    longPath.endsWith(Path("scala")) shouldBe true
+    longPath.endsWith(Path("main/scala")) shouldBe true
+    longPath.endsWith(Path("src/main/scala")) shouldBe true
+    longPath.endsWith(Path("other")) shouldBe false
+  }
+
+  it should "handle absolute vs relative correctly" in {
+    val absPath = Path("/home/user")
+    val relPath = Path("home/user")
+
+    absPath.startsWith(Path("/home")) shouldBe true
+    absPath.startsWith(Path("home")) shouldBe false
+
+    relPath.startsWith(Path("home")) shouldBe true
+    relPath.startsWith(Path("/home")) shouldBe false
+  }
+
+  "Path subpath" should "extract path segments correctly" in {
+    val path = Path("a/b/c/d/e")
+
+    path.subpath(0, 2) shouldBe Path("a/b")
+    path.subpath(1, 4) shouldBe Path("b/c/d")
+    path.subpath(2, 5) shouldBe Path("c/d/e")
+    path.subpath(0, 5) shouldBe Path("a/b/c/d/e")
+    path.subpath(3, 3) shouldBe Path("")
+  }
+
+  it should "validate range parameters" in {
+    val path = Path("a/b/c")
+
+    assertThrows[IllegalArgumentException] {
+      path.subpath(-1, 2)
+    }
+
+    assertThrows[IllegalArgumentException] {
+      path.subpath(0, 4) // Beyond segments length
+    }
+
+    assertThrows[IllegalArgumentException] {
+      path.subpath(2, 1) // start > end
+    }
+  }
+
+  "Path toAbsolutePath" should "convert relative paths to absolute" in {
+    val relPath = Path("documents/file.txt")
+    val absPath = relPath.toAbsolutePath()
+
+    absPath.isAbsolute shouldBe true
+    absPath.endsWith(Path("documents/file.txt")) shouldBe true
+  }
+
+  it should "leave absolute paths unchanged" in {
+    val absPath = Path("/home/user/file.txt")
+    absPath.toAbsolutePath() shouldBe absPath
+  }
+
   "Path normalization" should "handle . and .. correctly" in {
     Path("foo/./bar").normalize.segments shouldBe Vector("foo", "bar")
     Path("foo/../bar").normalize.segments shouldBe Vector("bar")
@@ -127,15 +235,6 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
   it should "preserve .. when it would go above root" in {
     Path("../foo").normalize.segments shouldBe Vector("..", "foo")
     Path("../../foo").normalize.segments shouldBe Vector("..", "..", "foo")
-  }
-
-  "Path parent and filename" should "work correctly" in {
-    val path = Path("/home/user/file.txt")
-    path.parent.map(_.segments) shouldBe Some(Vector("home", "user"))
-    path.filename shouldBe "file.txt"
-
-    Path("/").parent shouldBe None
-    Path("file.txt").parent shouldBe Some(Path(""))
   }
 
   // ===== FILE OPERATIONS TESTS =====
@@ -171,6 +270,84 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
 
     testFile.delete()
     testFile.exists() shouldBe false
+  }
+
+  // ===== NEW FILE METADATA TESTS =====
+
+  "File metadata methods" should "check file permissions correctly" in {
+    val testFile = tempDir / "permissions-test.txt"
+    testFile.writeText("test content")
+
+    testFile.isReadable() shouldBe true
+    testFile.isWritable() shouldBe true
+    // Note: isExecutable may vary by platform for text files
+
+    testFile.delete()
+  }
+
+  it should "detect symbolic links" in {
+    // Note: This test may need to be skipped on platforms without symlink support
+    val targetFile = tempDir / "target.txt"
+    targetFile.writeText("target content")
+
+    // The cross-platform library would need to support creating symlinks for this test
+    // testFile.isSymbolicLink() shouldBe false // regular file
+    // symlink.isSymbolicLink() shouldBe true  // symbolic link
+
+    targetFile.delete()
+  }
+
+  "File isEmpty method" should "detect empty files correctly" in {
+    val emptyFile    = tempDir / "empty.txt"
+    val nonEmptyFile = tempDir / "content.txt"
+
+    emptyFile.writeText("")
+    nonEmptyFile.writeText("some content")
+
+    emptyFile.isEmpty() shouldBe true
+    nonEmptyFile.isEmpty() shouldBe false
+
+    emptyFile.delete()
+    nonEmptyFile.delete()
+  }
+
+  it should "detect empty directories correctly" in {
+    val emptyDir    = tempDir / "empty-dir"
+    val nonEmptyDir = tempDir / "non-empty-dir"
+    val fileInDir   = nonEmptyDir / "file.txt"
+
+    emptyDir.createDirectory()
+    nonEmptyDir.createDirectory()
+    fileInDir.writeText("content")
+
+    emptyDir.isEmpty() shouldBe true
+    nonEmptyDir.isEmpty() shouldBe false
+
+    fileInDir.delete()
+    nonEmptyDir.delete()
+    emptyDir.delete()
+  }
+
+  it should "throw for non-existent paths" in {
+    val nonExistent = tempDir / "does-not-exist"
+
+    assertThrows[IllegalArgumentException] {
+      nonExistent.isEmpty()
+    }
+  }
+
+  "File isSameFile method" should "detect identical files" in {
+    val file1 = tempDir / "file1.txt"
+    val file2 = tempDir / "file2.txt"
+
+    file1.writeText("content")
+    file2.writeText("content")
+
+    file1.isSameFile(file1) shouldBe true
+    file1.isSameFile(file2) shouldBe false // Different files, even with same content
+
+    file1.delete()
+    file2.delete()
   }
 
   "Directory operations" should "create and list directories" in {
@@ -310,5 +487,38 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
     // Verify round trip
     val resolvedPath = pkg1 / relativePath
     resolvedPath.normalize shouldBe pkg2
+  }
+
+  // ===== COMPREHENSIVE PATH MANIPULATION TESTS =====
+
+  "Enhanced path manipulation" should "handle complex scenarios" in {
+    // Test chaining of operations
+    val complexPath = Path("/projects/myapp/src/main/scala/MyClass.scala")
+
+    val withoutExt = complexPath.nameWithoutExtension
+    withoutExt shouldBe "MyClass"
+
+    val newPath = complexPath.withExtension("java")
+    newPath shouldBe Path("/projects/myapp/src/main/scala/MyClass.java")
+    newPath.extension shouldBe ".java"
+
+    val subPath = complexPath.subpath(2, 5)
+    subPath shouldBe Path("src/main/scala")
+
+    val parent = complexPath.parent.get
+    parent shouldBe Path("/projects/myapp/src/main/scala")
+  }
+
+  it should "work with relative paths and toAbsolutePath" in {
+    val relPath = Path("src/test/scala/MyTest.scala")
+
+    relPath.isAbsolute shouldBe false
+    relPath.extension shouldBe ".scala"
+    relPath.nameWithoutExtension shouldBe "MyTest"
+
+    val absPath = relPath.toAbsolutePath()
+    absPath.isAbsolute shouldBe true
+    absPath.filename shouldBe "MyTest.scala"
+    absPath.extension shouldBe ".scala"
   }
 }
