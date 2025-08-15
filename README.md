@@ -273,4 +273,4 @@ MIT License - see LICENSE file for details.
 
 ---
 
-*Finally, a file system library that doesn't make you hate working with files in Scala.*a
+*Finally, a file system library that doesn't make you hate working with files in Scala.*
