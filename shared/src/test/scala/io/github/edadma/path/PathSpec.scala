@@ -20,18 +20,18 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
 
   override def afterEach(): Unit = {
     // Clean up the temporary directory using only our Path library
-    if (tempDir.exists() && tempDir.isDirectory()) {
+    if (tempDir.exists && tempDir.isDirectory) {
       deleteRecursively(tempDir)
     }
   }
 
   private def deleteRecursively(path: Path): Unit = {
-    if (path.isDirectory()) {
+    if (path.isDirectory) {
       path.listDirectory().foreach { entry =>
         deleteRecursively(path / entry.name)
       }
     }
-    if (path.exists()) {
+    if (path.exists) {
       path.delete()
     }
   }
@@ -210,7 +210,7 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
 
   "Path toAbsolutePath" should "convert relative paths to absolute" in {
     val relPath = Path("documents/file.txt")
-    val absPath = relPath.toAbsolutePath()
+    val absPath = relPath.toAbsolutePath
 
     absPath.isAbsolute shouldBe true
     absPath.endsWith(Path("documents/file.txt")) shouldBe true
@@ -218,7 +218,7 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
 
   it should "leave absolute paths unchanged" in {
     val absPath = Path("/home/user/file.txt")
-    absPath.toAbsolutePath() shouldBe absPath
+    absPath.toAbsolutePath shouldBe absPath
   }
 
   "Path normalization" should "handle . and .. correctly" in {
@@ -243,18 +243,18 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
     val testFile = tempDir / "test.txt"
     val content  = "Hello, World!\nThis is a test."
 
-    testFile.exists() shouldBe false
+    testFile.exists shouldBe false
 
     testFile.writeText(content)
-    testFile.exists() shouldBe true
-    testFile.isFile() shouldBe true
-    testFile.isDirectory() shouldBe false
+    testFile.exists shouldBe true
+    testFile.isFile shouldBe true
+    testFile.isDirectory shouldBe false
 
     testFile.readText() shouldBe content
-    testFile.size() shouldBe content.getBytes("UTF-8").length
+    testFile.size shouldBe content.getBytes("UTF-8").length
 
     testFile.delete()
-    testFile.exists() shouldBe false
+    testFile.exists shouldBe false
   }
 
   it should "work with binary files" in {
@@ -262,14 +262,14 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
     val data     = Array[Byte](1, 2, 3, 4, 5, -1, -2, -3)
 
     testFile.writeBytes(data)
-    testFile.exists() shouldBe true
-    testFile.isFile() shouldBe true
+    testFile.exists shouldBe true
+    testFile.isFile shouldBe true
 
-    testFile.readBytes() shouldBe data
-    testFile.size() shouldBe data.length
+    testFile.readBytes shouldBe data
+    testFile.size shouldBe data.length
 
     testFile.delete()
-    testFile.exists() shouldBe false
+    testFile.exists shouldBe false
   }
 
   // ===== NEW FILE METADATA TESTS =====
@@ -278,8 +278,8 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
     val testFile = tempDir / "permissions-test.txt"
     testFile.writeText("test content")
 
-    testFile.isReadable() shouldBe true
-    testFile.isWritable() shouldBe true
+    testFile.isReadable shouldBe true
+    testFile.isWritable shouldBe true
     // Note: isExecutable may vary by platform for text files
 
     testFile.delete()
@@ -291,8 +291,8 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
     targetFile.writeText("target content")
 
     // The cross-platform library would need to support creating symlinks for this test
-    // testFile.isSymbolicLink() shouldBe false // regular file
-    // symlink.isSymbolicLink() shouldBe true  // symbolic link
+    // testFile.isSymbolicLink shouldBe false // regular file
+    // symlink.isSymbolicLink shouldBe true  // symbolic link
 
     targetFile.delete()
   }
@@ -304,8 +304,8 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
     emptyFile.writeText("")
     nonEmptyFile.writeText("some content")
 
-    emptyFile.isEmpty() shouldBe true
-    nonEmptyFile.isEmpty() shouldBe false
+    emptyFile.isEmpty shouldBe true
+    nonEmptyFile.isEmpty shouldBe false
 
     emptyFile.delete()
     nonEmptyFile.delete()
@@ -320,8 +320,8 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
     nonEmptyDir.createDirectory()
     fileInDir.writeText("content")
 
-    emptyDir.isEmpty() shouldBe true
-    nonEmptyDir.isEmpty() shouldBe false
+    emptyDir.isEmpty shouldBe true
+    nonEmptyDir.isEmpty shouldBe false
 
     fileInDir.delete()
     nonEmptyDir.delete()
@@ -332,7 +332,7 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
     val nonExistent = tempDir / "does-not-exist"
 
     assertThrows[IllegalArgumentException] {
-      nonExistent.isEmpty()
+      nonExistent.isEmpty
     }
   }
 
@@ -353,24 +353,24 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
   "Directory operations" should "create and list directories" in {
     val subDir = tempDir / "subdir"
 
-    subDir.exists() shouldBe false
+    subDir.exists shouldBe false
     subDir.createDirectory()
-    subDir.exists() shouldBe true
-    subDir.isDirectory() shouldBe true
-    subDir.isFile() shouldBe false
+    subDir.exists shouldBe true
+    subDir.isDirectory shouldBe true
+    subDir.isFile shouldBe false
   }
 
   it should "create nested directories" in {
     val nestedDir = tempDir / "level1" / "level2" / "level3"
 
-    nestedDir.exists() shouldBe false
+    nestedDir.exists shouldBe false
     nestedDir.createDirectories() // This should create all parent dirs
-    nestedDir.exists() shouldBe true
-    nestedDir.isDirectory() shouldBe true
+    nestedDir.exists shouldBe true
+    nestedDir.isDirectory shouldBe true
 
     // Parents should also exist
-    (tempDir / "level1").exists() shouldBe true
-    (tempDir / "level1" / "level2").exists() shouldBe true
+    (tempDir / "level1").exists shouldBe true
+    (tempDir / "level1" / "level2").exists shouldBe true
   }
 
   "Directory listing" should "list files and directories" in {
@@ -411,13 +411,13 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
     val content = "File content to copy"
 
     source.writeText(content)
-    source.exists() shouldBe true
-    target.exists() shouldBe false
+    source.exists shouldBe true
+    target.exists shouldBe false
 
     source.copyTo(target)
 
-    source.exists() shouldBe true // Source should still exist
-    target.exists() shouldBe true
+    source.exists shouldBe true // Source should still exist
+    target.exists shouldBe true
     target.readText() shouldBe content
   }
 
@@ -427,13 +427,13 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
     val content = "File content to move"
 
     source.writeText(content)
-    source.exists() shouldBe true
-    target.exists() shouldBe false
+    source.exists shouldBe true
+    target.exists shouldBe false
 
     source.moveTo(target)
 
-    source.exists() shouldBe false // Source should be gone
-    target.exists() shouldBe true
+    source.exists shouldBe false // Source should be gone
+    target.exists shouldBe true
     target.readText() shouldBe content
   }
 
@@ -459,9 +459,9 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
     (dependency / "lib" / "index.js").writeText("module.exports = 'dependency code'")
 
     // Verify structure
-    myPackage.exists() shouldBe true
-    (myPackage / "lib" / "main.js").exists() shouldBe true
-    dependency.exists() shouldBe true
+    myPackage.exists shouldBe true
+    (myPackage / "lib" / "main.js").exists shouldBe true
+    dependency.exists shouldBe true
 
     // Test finding packages
     val allPackages = packagesDir.listDirectory()
@@ -516,7 +516,7 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
     relPath.extension shouldBe ".scala"
     relPath.nameWithoutExtension shouldBe "MyTest"
 
-    val absPath = relPath.toAbsolutePath()
+    val absPath = relPath.toAbsolutePath
     absPath.isAbsolute shouldBe true
     absPath.filename shouldBe "MyTest.scala"
     absPath.extension shouldBe ".scala"

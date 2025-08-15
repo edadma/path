@@ -39,10 +39,10 @@ import io.github.edadma.cross_platform.FileType
 
   // Test with current directory
   val currentDir = Path(".")
-  println(s"Current directory exists: ${currentDir.exists()}")
-  println(s"Is directory: ${currentDir.isDirectory()}")
+  println(s"Current directory exists: ${currentDir.exists}")
+  println(s"Is directory: ${currentDir.isDirectory}")
 
-  if (currentDir.exists() && currentDir.isDirectory()) {
+  if (currentDir.exists && currentDir.isDirectory) {
     println("\nFiles in current directory:")
     val entries = currentDir.listDirectory()
     entries.take(10).foreach { entry =>
@@ -74,9 +74,9 @@ import io.github.edadma.cross_platform.FileType
     // Create a test file
     testFile.writeText("Hello, Path!\nThis is a test file.")
     println(s"Created test file: $testFile")
-    println(s"File exists: ${testFile.exists()}")
-    println(s"File size: ${testFile.size()} bytes")
-    println(s"Is file: ${testFile.isFile()}")
+    println(s"File exists: ${testFile.exists}")
+    println(s"File size: ${testFile.size} bytes")
+    println(s"Is file: ${testFile.isFile}")
 
     // Read it back
     val content = testFile.readText()
@@ -84,13 +84,13 @@ import io.github.edadma.cross_platform.FileType
 
     // Clean up
     testFile.delete()
-    println(s"Deleted test file. Exists: ${testFile.exists()}")
+    println(s"Deleted test file. Exists: ${testFile.exists}")
 
   } catch {
     case e: Exception =>
       println(s"Error during file test: ${e.getMessage}")
       // Try to clean up if file was created
-      if (testFile.exists()) {
+      if (testFile.exists) {
         try testFile.delete()
         catch { case _: Exception => }
       }

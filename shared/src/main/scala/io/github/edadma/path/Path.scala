@@ -72,7 +72,7 @@ case class Path(segments: Vector[String], isAbsolute: Boolean) {
     Path(segments.slice(start, end), isAbsolute = false)
   }
 
-  def toAbsolutePath(): Path = {
+  def toAbsolutePath: Path = {
     if (isAbsolute) this
     else {
       val currentDir = Path(cross_platform.getCurrentDirectory)
@@ -91,21 +91,21 @@ case class Path(segments: Vector[String], isAbsolute: Boolean) {
 
   // ===== FILE SYSTEM METADATA (I/O operations) =====
 
-  def exists(): Boolean         = cross_platform.exists(toPlatformString)
-  def isFile(): Boolean         = cross_platform.isFile(toPlatformString)
-  def isDirectory(): Boolean    = cross_platform.isDirectory(toPlatformString)
-  def isSymbolicLink(): Boolean = cross_platform.isSymbolicLink(toPlatformString)
-  def isReadable(): Boolean     = cross_platform.isReadable(toPlatformString)
-  def isWritable(): Boolean     = cross_platform.isWritable(toPlatformString)
-  def isExecutable(): Boolean   = cross_platform.isExecutable(toPlatformString)
+  def exists: Boolean         = cross_platform.exists(toPlatformString)
+  def isFile: Boolean         = cross_platform.isFile(toPlatformString)
+  def isDirectory: Boolean    = cross_platform.isDirectory(toPlatformString)
+  def isSymbolicLink: Boolean = cross_platform.isSymbolicLink(toPlatformString)
+  def isReadable: Boolean     = cross_platform.isReadable(toPlatformString)
+  def isWritable: Boolean     = cross_platform.isWritable(toPlatformString)
+  def isExecutable: Boolean   = cross_platform.isExecutable(toPlatformString)
 
-  def size(): Long         = cross_platform.fileSize(toPlatformString)
-  def lastModified(): Long = cross_platform.lastModified(toPlatformString)
+  def size: Long         = cross_platform.fileSize(toPlatformString)
+  def lastModified: Long = cross_platform.lastModified(toPlatformString)
 
-  def isEmpty(): Boolean = {
-    if (!exists()) throw new IllegalArgumentException(s"Path does not exist: $this")
-    if (isDirectory()) listDirectory().isEmpty
-    else size() == 0
+  def isEmpty: Boolean = {
+    if (!exists) throw new IllegalArgumentException(s"Path does not exist: $this")
+    if (isDirectory) listDirectory().isEmpty
+    else size == 0
   }
 
   def isSameFile(other: Path): Boolean = cross_platform.isSameFile(toPlatformString, other.toPlatformString)
@@ -114,7 +114,7 @@ case class Path(segments: Vector[String], isAbsolute: Boolean) {
 
   def readText(charset: String = "UTF-8"): String                 = cross_platform.readFile(toPlatformString)
   def writeText(content: String, charset: String = "UTF-8"): Unit = cross_platform.writeFile(toPlatformString, content)
-  def readBytes(): Array[Byte]                                    = cross_platform.readBytes(toPlatformString)
+  def readBytes: Array[Byte]                                      = cross_platform.readBytes(toPlatformString)
   def writeBytes(data: Array[Byte]): Unit                         = cross_platform.writeBytes(toPlatformString, data)
 
   def listDirectory(pattern: String = "*"): Vector[DirectoryEntry] = {
@@ -230,10 +230,10 @@ object PathTest extends App {
 
   // Test with current directory
   val currentDir = Path(".")
-  println(s"Current directory exists: ${currentDir.exists()}")
-  println(s"Is directory: ${currentDir.isDirectory()}")
+  println(s"Current directory exists: ${currentDir.exists}")
+  println(s"Is directory: ${currentDir.isDirectory}")
 
-  if (currentDir.exists() && currentDir.isDirectory()) {
+  if (currentDir.exists && currentDir.isDirectory) {
     println("\nFiles in current directory:")
     val entries = currentDir.listDirectory()
     entries.take(10).foreach { entry =>
@@ -252,11 +252,11 @@ object PathTest extends App {
 
     // Test new metadata methods
     println(s"\nCurrent directory metadata:")
-    println(s"  Readable: ${currentDir.isReadable()}")
-    println(s"  Writable: ${currentDir.isWritable()}")
-    println(s"  Executable: ${currentDir.isExecutable()}")
-    if (currentDir.isDirectory()) {
-      println(s"  Directory empty: ${currentDir.isEmpty()}")
+    println(s"  Readable: ${currentDir.isReadable}")
+    println(s"  Writable: ${currentDir.isWritable}")
+    println(s"  Executable: ${currentDir.isExecutable}")
+    if (currentDir.isDirectory) {
+      println(s"  Directory empty: ${currentDir.isEmpty}")
     }
 
     // Test pattern matching
@@ -274,15 +274,15 @@ object PathTest extends App {
     // Create a test file
     testFile.writeText("Hello, Enhanced Path!\nThis is a test file.")
     println(s"Created test file: $testFile")
-    println(s"File exists: ${testFile.exists()}")
-    println(s"File size: ${testFile.size()} bytes")
-    println(s"Is file: ${testFile.isFile()}")
-    println(s"Is readable: ${testFile.isReadable()}")
-    println(s"Is writable: ${testFile.isWritable()}")
-    println(s"Is empty: ${testFile.isEmpty()}")
+    println(s"File exists: ${testFile.exists}")
+    println(s"File size: ${testFile.size} bytes")
+    println(s"Is file: ${testFile.isFile}")
+    println(s"Is readable: ${testFile.isReadable}")
+    println(s"Is writable: ${testFile.isWritable}")
+    println(s"Is empty: ${testFile.isEmpty}")
 
     // Test absolute path conversion
-    println(s"Absolute path: ${testFile.toAbsolutePath()}")
+    println(s"Absolute path: ${testFile.toAbsolutePath}")
 
     // Read it back
     val content = testFile.readText()
@@ -290,13 +290,13 @@ object PathTest extends App {
 
     // Clean up
     testFile.delete()
-    println(s"Deleted test file. Exists: ${testFile.exists()}")
+    println(s"Deleted test file. Exists: ${testFile.exists}")
 
   } catch {
     case e: Exception =>
       println(s"Error during file test: ${e.getMessage}")
       // Try to clean up if file was created
-      if (testFile.exists()) {
+      if (testFile.exists) {
         try testFile.delete()
         catch { case _: Exception => }
       }

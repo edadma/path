@@ -21,7 +21,7 @@ if (Files.exists(configPath)) {
 
 // Path way - clean and fluent
 val configPath = Path("config") / "app.conf"
-if (configPath.exists()) {
+if (configPath.exists) {
   val content = configPath.readText()
 }
 ```
@@ -45,7 +45,7 @@ val projectDir = Path("src") / "main" / "scala"
 val configFile = Path("/etc") / "myapp" / "config.json"
 
 // File operations as methods (the way it should be!)
-if (configFile.exists()) {
+if (configFile.exists) {
   val config = configFile.readText()
   println(s"Config: $config")
 }
@@ -57,7 +57,7 @@ println(s"Name: ${scalaFile.nameWithoutExtension}")     // MyClass
 val javaFile = scalaFile.withExtension("java")          // MyClass.java
 
 // Convert to absolute paths
-val absolutePath = projectDir.toAbsolutePath()
+val absolutePath = projectDir.toAbsolutePath
 println(s"Absolute: $absolutePath")
 
 // Create directory structure
@@ -71,7 +71,7 @@ scalaFiles.foreach { entry =>
 }
 
 // Check file permissions and metadata
-if (configFile.isReadable() && !configFile.isEmpty()) {
+if (configFile.isReadable && !configFile.isEmpty) {
   println("Config file is readable and not empty")
 }
 ```
@@ -99,7 +99,7 @@ println(sourceFile.endsWith(Path("MyClass.scala"))) // true
 
 // Convert relative to absolute
 val relPath = Path("src/main/scala")
-val absPath = relPath.toAbsolutePath()     // /current/working/dir/src/main/scala
+val absPath = relPath.toAbsolutePath     // /current/working/dir/src/main/scala
 
 // Relative paths between locations
 val targetDir = Path("/home/user/projects/myapp/target")
@@ -120,20 +120,20 @@ println(file.filename)  // document.pdf
 val file = Path("important-document.pdf")
 
 // Existence and type checking
-println(s"Exists: ${file.exists()}")
-println(s"Is file: ${file.isFile()}")
-println(s"Is directory: ${file.isDirectory()}")
-println(s"Is symbolic link: ${file.isSymbolicLink()}")
+println(s"Exists: ${file.exists}")
+println(s"Is file: ${file.isFile}")
+println(s"Is directory: ${file.isDirectory}")
+println(s"Is symbolic link: ${file.isSymbolicLink}")
 
 // Permission checking
-println(s"Readable: ${file.isReadable()}")
-println(s"Writable: ${file.isWritable()}")
-println(s"Executable: ${file.isExecutable()}")
+println(s"Readable: ${file.isReadable}")
+println(s"Writable: ${file.isWritable}")
+println(s"Executable: ${file.isExecutable}")
 
 // File properties
-println(s"Size: ${file.size()} bytes")
-println(s"Modified: ${file.lastModified()}")
-println(s"Empty: ${file.isEmpty()}")
+println(s"Size: ${file.size} bytes")
+println(s"Modified: ${file.lastModified}")
+println(s"Empty: ${file.isEmpty}")
 
 // Compare files
 val backup = Path("document-backup.pdf")
@@ -153,10 +153,10 @@ val content = file.readText()
 // Binary files  
 val data = Array[Byte](1, 2, 3, 4)
 file.writeBytes(data)
-val bytes = file.readBytes()
+val bytes = file.readBytes
 
 // Check if file/directory is empty
-if (file.isEmpty()) {
+if (file.isEmpty) {
   println("File has no content")
 }
 ```
@@ -184,7 +184,7 @@ allFiles.foreach { entry =>
 }
 
 // Check if directory is empty
-if (dir.isEmpty()) {
+if (dir.isEmpty) {
   println("Directory contains no files")
 }
 ```
@@ -246,7 +246,7 @@ val pathSegments = sourceDir.subpath(1, 4)  // projects/myapp/src
 ### File System Analysis
 ```scala
 def analyzeDirectory(dir: Path): Unit = {
-  if (!dir.exists() || !dir.isDirectory()) {
+  if (!dir.exists || !dir.isDirectory) {
     println(s"$dir is not a valid directory")
     return
   }
@@ -267,12 +267,12 @@ def analyzeDirectory(dir: Path): Unit = {
   println(s"  Files: ${files.length}")
   println(s"  Directories: ${dirs.length}")
   println(s"  Symbolic links: ${links.length}")
-  println(s"  Empty: ${dir.isEmpty()}")
+  println(s"  Empty: ${dir.isEmpty}")
   
   // Find largest files
   val fileSizes = files.map { entry =>
     val filePath = dir / entry.name
-    (entry.name, filePath.size())
+    (entry.name, filePath.size)
   }.sortBy(-_._2)
   
   println("  Largest files:")
@@ -316,12 +316,12 @@ val configDir = Path(System.getProperty("user.home")) / ".myapp"
 configDir.createDirectories()
 
 val configFile = configDir / "config.json"
-if (!configFile.exists()) {
+if (!configFile.exists) {
   configFile.writeText("""{"theme": "dark", "autoSave": true}""")
 }
 
 // Validate config file
-if (configFile.isReadable() && !configFile.isEmpty()) {
+if (configFile.isReadable && !configFile.isEmpty) {
   val config = configFile.readText()
   println(s"Loaded config: ${config.length} characters")
 }
@@ -339,7 +339,7 @@ println(s"Found ${scalaFiles.length} Scala files")
 // Analyze source files
 scalaFiles.foreach { entry =>
   val sourcePath = sourceDir / entry.name
-  println(s"${sourcePath.filename}: ${sourcePath.size()} bytes")
+  println(s"${sourcePath.filename}: ${sourcePath.size} bytes")
   
   // Convert to target path
   val targetPath = targetDir / sourcePath.nameWithoutExtension.withExtension("class")
@@ -366,7 +366,7 @@ if (logFiles.nonEmpty) {
     val logFile = logDir / entry.name
     
     // Check if log file should be archived (e.g., older than 30 days)
-    val ageMs = System.currentTimeMillis() - logFile.lastModified()
+    val ageMs = System.currentTimeMillis() - logFile.lastModified
     val ageDays = ageMs / (1000 * 60 * 60 * 24)
     
     if (ageDays > 30) {
@@ -378,7 +378,7 @@ if (logFiles.nonEmpty) {
 }
 
 // Clean up empty directories
-if (logDir.isEmpty()) {
+if (logDir.isEmpty) {
   println("Log directory is empty")
 }
 ```
@@ -386,17 +386,17 @@ if (logDir.isEmpty()) {
 ### File System Utilities
 ```scala
 def findLargestFiles(dir: Path, count: Int = 10): Vector[(Path, Long)] = {
-  if (!dir.exists() || !dir.isDirectory()) {
+  if (!dir.exists || !dir.isDirectory) {
     return Vector.empty
   }
   
   val allFiles = dir.listDirectory()
     .filter(_.fileType == FileType.File)
     .map(entry => dir / entry.name)
-    .filter(_.isReadable())
+    .filter(_.isReadable)
   
   allFiles
-    .map(file => (file, file.size()))
+    .map(file => (file, file.size))
     .sortBy(-_._2)
     .take(count)
 }
@@ -406,7 +406,7 @@ def findFilesByExtension(dir: Path, extension: String): Vector[Path] = {
   
   dir.listDirectory(pattern)
     .map(entry => dir / entry.name)
-    .filter(_.isFile())
+    .filter(_.isFile)
 }
 
 // Usage

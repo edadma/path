@@ -170,7 +170,7 @@ Path("a/b/c/d").subpath(2, 2)    // "" (empty)
 
 ### Path Conversion
 ```scala
-def toAbsolutePath(): Path
+def toAbsolutePath: Path
 def normalize: Path
 def toString: String
 def toPlatformString: String
@@ -179,8 +179,8 @@ def toPlatformString: String
 **Examples:**
 ```scala
 // toAbsolutePath (requires getCurrentDirectory from cross-platform)
-Path("src/main").toAbsolutePath()             // /current/dir/src/main
-Path("/abs/path").toAbsolutePath()            // /abs/path (unchanged)
+Path("src/main").toAbsolutePath             // /current/dir/src/main
+Path("/abs/path").toAbsolutePath            // /abs/path (unchanged)
 
 // normalize - resolve . and ..
 Path("a/./b").normalize                       // a/b
@@ -200,49 +200,49 @@ Path("/home/user").toPlatformString           // "/home/user" (Unix) or "\\home\
 
 ### Existence and Type Checking
 ```scala
-def exists(): Boolean
-def isFile(): Boolean
-def isDirectory(): Boolean
-def isSymbolicLink(): Boolean
+def exists: Boolean
+def isFile: Boolean
+def isDirectory: Boolean
+def isSymbolicLink: Boolean
 ```
 **Purpose:** Check file system entry existence and type  
 **Examples:**
 ```scala
-Path("file.txt").exists()         // true if exists
-Path("file.txt").isFile()         // true if regular file
-Path("dir").isDirectory()         // true if directory
-Path("link").isSymbolicLink()     // true if symbolic link
+Path("file.txt").exists         // true if exists
+Path("file.txt").isFile         // true if regular file
+Path("dir").isDirectory         // true if directory
+Path("link").isSymbolicLink     // true if symbolic link
 ```
 
 ### Permission Checking
 ```scala
-def isReadable(): Boolean
-def isWritable(): Boolean  
-def isExecutable(): Boolean
+def isReadable: Boolean
+def isWritable: Boolean  
+def isExecutable: Boolean
 ```
 **Purpose:** Check file system permissions  
 **Platform behavior:** Uses platform-specific permission systems  
 **Examples:**
 ```scala
-Path("script.sh").isExecutable()  // true if can execute
-Path("readonly.txt").isWritable() // false if read-only
-Path("file.txt").isReadable()     // true if can read
+Path("script.sh").isExecutable  // true if can execute
+Path("readonly.txt").isWritable // false if read-only
+Path("file.txt").isReadable     // true if can read
 ```
 
 ### File Properties
 ```scala
-def size(): Long
-def lastModified(): Long
-def isEmpty(): Boolean
+def size: Long
+def lastModified: Long
+def isEmpty: Boolean
 ```
 **Purpose:** Get file metadata  
 **isEmpty behavior:** For files: size == 0, for directories: no entries  
 **Examples:**
 ```scala
-Path("file.txt").size()           // File size in bytes
-Path("file.txt").lastModified()   // Timestamp in milliseconds
-Path("file.txt").isEmpty()        // true if zero bytes
-Path("dir").isEmpty()             // true if no files/subdirs
+Path("file.txt").size           // File size in bytes
+Path("file.txt").lastModified   // Timestamp in milliseconds
+Path("file.txt").isEmpty        // true if zero bytes
+Path("dir").isEmpty             // true if no files/subdirs
 ```
 
 ### File Comparison
@@ -276,7 +276,7 @@ Path("latin.txt").readText("ISO-8859-1")      // Custom encoding
 
 ### Binary File Operations
 ```scala
-def readBytes(): Array[Byte]
+def readBytes: Array[Byte]
 def writeBytes(data: Array[Byte]): Unit
 ```
 **Purpose:** Read/write binary data  
@@ -284,7 +284,7 @@ def writeBytes(data: Array[Byte]): Unit
 ```scala
 val imageData = Array[Byte](0xFF, 0xD8, 0xFF) // JPEG header
 Path("image.jpg").writeBytes(imageData)
-val data = Path("image.jpg").readBytes()
+val data = Path("image.jpg").readBytes
 ```
 
 ### Directory Listing
@@ -346,7 +346,7 @@ Path("temp.txt").moveTo(Path("final.txt"))    // Move/rename file
 // These throw IllegalArgumentException:
 Path("/abs").relativeTo(Path("rel"))          // Mixed absolute/relative
 Path("a/b").subpath(-1, 2)                    // Invalid range
-Path("nonexistent").isEmpty()                 // File doesn't exist
+Path("nonexistent").isEmpty                 // File doesn't exist
 
 // Platform I/O exceptions:
 Path("/protected/file").readText()            // Permission denied
@@ -391,7 +391,7 @@ Path("nonexistent.txt").readText()            // File not found
 ```scala
 // Chain operations fluently
 val configPath = Path("config") / "app.conf"
-if (configPath.exists() && configPath.isReadable()) {
+if (configPath.exists && configPath.isReadable) {
   val config = configPath.readText()
 }
 
@@ -416,7 +416,7 @@ try {
 val bad = Path(s"$base/$file")  // Use base / file instead
 
 // Don't ignore file existence
-path.readText()  // Check exists() first
+path.readText()  // Check exists first
 
 // Don't mix absolute/relative carelessly
 absPath.relativeTo(relPath)  // Will throw exception
