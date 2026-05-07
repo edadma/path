@@ -174,7 +174,7 @@ object Path {
 }
 
 // Test Application
-object PathTest extends App {
+@main def pathDemo(): Unit =
   println("=== Enhanced Path Library Test ===\n")
 
   // Test path operations
@@ -303,4 +303,3 @@ object PathTest extends App {
   }
 
   println("\n=== Enhanced Test Complete ===")
-}
