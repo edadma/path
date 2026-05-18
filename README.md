@@ -187,6 +187,15 @@ allFiles.foreach { entry =>
 if (dir.isEmpty) {
   println("Directory contains no files")
 }
+
+// Create a fresh temporary directory under the system temp.
+// Returned Path is absolute; the caller owns it (no auto-delete).
+val workDir = Path.createTempDirectory("myapp-")
+try {
+  (workDir / "config.json").writeText("""{"key": "value"}""")
+} finally {
+  // Recursive delete is up to the caller — Path doesn't ship one yet.
+}
 ```
 
 ### File Management
@@ -297,7 +306,7 @@ The same `Path` code compiles and runs identically across all platforms.
 Add to your `build.sbt`:
 
 ```scala
-libraryDependencies += "io.github.edadma" %%% "path" % "0.0.5"
+libraryDependencies += "io.github.edadma" %%% "path" % "0.0.6"
 ```
 
 For cross-platform projects:

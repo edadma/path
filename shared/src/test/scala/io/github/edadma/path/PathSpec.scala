@@ -521,4 +521,32 @@ class PathSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
     absPath.filename shouldBe "MyTest.scala"
     absPath.extension shouldBe ".scala"
   }
+
+  "Path.createTempDirectory" should "create a fresh empty directory under the system temp" in {
+    val d = Path.createTempDirectory("path-test-mkdtemp-")
+    try {
+      d.exists shouldBe true
+      d.isDirectory shouldBe true
+      d.isAbsolute shouldBe true
+      // The prefix appears in the final segment.
+      d.filename should startWith ("path-test-mkdtemp-")
+      // It's actually writable — drop a file in it and read it back.
+      val f = d / "ping.txt"
+      f.writeText("pong")
+      f.readText() shouldBe "pong"
+    } finally {
+      deleteRecursively(d)
+    }
+  }
+
+  it should "produce distinct paths for repeated calls with the same prefix" in {
+    val a = Path.createTempDirectory("path-test-distinct-")
+    val b = Path.createTempDirectory("path-test-distinct-")
+    try {
+      a shouldNot be (b)
+    } finally {
+      deleteRecursively(a)
+      deleteRecursively(b)
+    }
+  }
 }

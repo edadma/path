@@ -171,6 +171,19 @@ object Path {
     val segments = cleaned.split("/").filter(_.nonEmpty).toVector
     Path(segments, isAbs)
   }
+
+  /** Create a fresh temporary directory under the system's default temp
+    * location, with the given name prefix. The directory is created
+    * immediately; the caller owns it and is responsible for cleanup
+    * (e.g., `tempDir.delete()` or a recursive walk). The returned
+    * Path is absolute.
+    *
+    * Delegates to [[cross_platform.createTempDirectory]] which uses
+    * `java.nio.file.Files.createTempDirectory` on JVM and Native and
+    * `fs.mkdtempSync` on Node. Requires cross_platform 0.1.7+.
+    */
+  def createTempDirectory(prefix: String): Path =
+    Path(cross_platform.createTempDirectory(prefix))
 }
 
 // Test Application
