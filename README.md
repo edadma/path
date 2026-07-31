@@ -3,7 +3,7 @@
 ![Maven Central](https://img.shields.io/maven-central/v/io.github.edadma/path_sjs1_3)
 [![Last Commit](https://img.shields.io/github/last-commit/edadma/path)](https://github.com/edadma/path/commits)
 ![GitHub](https://img.shields.io/github/license/edadma/path)
-![Scala Version](https://img.shields.io/badge/Scala-3.8.3-blue.svg)
+![Scala Version](https://img.shields.io/badge/Scala-3.8.4-blue.svg)
 ![ScalaJS Version](https://img.shields.io/badge/Scala.js-1.21.0-blue.svg)
 ![Scala Native Version](https://img.shields.io/badge/Scala_Native-0.5.11-blue.svg)
 
@@ -306,7 +306,7 @@ The same `Path` code compiles and runs identically across all platforms.
 Add to your `build.sbt`:
 
 ```scala
-libraryDependencies += "io.github.edadma" %%% "path" % "0.0.6"
+libraryDependencies += "io.github.edadma" %%% "path" % "0.0.7"
 ```
 
 For cross-platform projects:
