@@ -306,7 +306,7 @@ The same `Path` code compiles and runs identically across all platforms.
 Add to your `build.sbt`:
 
 ```scala
-libraryDependencies += "io.github.edadma" %%% "path" % "0.0.7"
+libraryDependencies += "io.github.edadma" %%% "path" % "0.0.8"
 ```
 
 For cross-platform projects:
